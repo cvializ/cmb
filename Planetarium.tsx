@@ -20,6 +20,9 @@ export default function Planetarium() {
       1000
     );
     camera.position.z = 3;
+    
+    // Update projection matrix for frustum calculations
+    camera.updateProjectionMatrix();
 
     // Create renderer using expo-three
     const renderer = new Renderer({ gl, antialias: true });
@@ -99,6 +102,34 @@ export default function Planetarium() {
       // Rotate both objects for visual clarity
       triangle.rotation.z += 0.01;
       plane.rotation.z -= 0.01;
+
+      // Update frustum for visibility checks
+      const frustum = new THREE.Frustum();
+      frustum.setFromProjectionMatrix(
+        camera.projectionMatrix,
+        camera.modelViewMatrix
+      );
+
+      // Check if objects are in the camera frustum
+      const triangleInFrustum = frustum.intersectsObject(triangle);
+      const planeInFrustum = frustum.intersectsObject(plane);
+
+      // Log visibility status (only once per second to avoid spam)
+      const now = Date.now();
+      if (now % 1000 < 50) {
+        console.log('=== Frustum Check ===');
+        console.log(`Triangle ${triangleInFrustum ? 'IN' : 'OUT'} of frustum`);
+        console.log(`Plane ${planeInFrustum ? 'IN' : 'OUT'} of frustum`);
+        console.log(`Camera position: z=${camera.position.z}`);
+        console.log(`Plane position: x=${plane.position.x}`);
+        
+        // Calculate frustum width at object's z-position
+        const fovRad = (75 * Math.PI) / 180;
+        const distance = camera.position.z; // objects are at z=0
+        const halfWidth = distance * Math.tan(fovRad / 2);
+        console.log(`Frustum half-width at z=0: ~${halfWidth.toFixed(2)}`);
+        console.log(`====================`);
+      }
 
       renderer.render(scene, camera);
     };
