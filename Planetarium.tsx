@@ -1,36 +1,33 @@
-import { GLView } from 'expo-gl';
-import * as ExpoTHREE from 'expo-three';
-const THREE = ExpoTHREE.THREE;
-const Renderer = ExpoTHREE.Renderer;
-import React, { useRef } from 'react';
-import { View, StyleSheet, Text, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
+import * as THREE from 'three';
+import { Renderer } from 'expo-three';
 
 export default function Planetarium() {
-  const animationFrameRef = useRef<number | null>(null);
+  const [camera, setCamera] = useState<THREE.Camera | null>(null);
 
-  const onContextCreate = async (gl: any) => {
-    // Create scene
-    const scene = new THREE.Scene();
+  let timeout: number;
 
-    // Create camera
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      gl.drawingBufferWidth / gl.drawingBufferHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 3;
-    
-    // Update projection matrix for frustum calculations
-    camera.updateProjectionMatrix();
+  React.useEffect(() => {
+    // Clear the animation loop when the component unmounts
+    return () => clearTimeout(timeout);
+  }, []);
 
-    // Create renderer using expo-three
+  const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
+    const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
+    const sceneColor = 0x222222;
+
+    // Create a WebGLRenderer without a DOM element
     const renderer = new Renderer({ gl, antialias: true });
-    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-    renderer.setPixelRatio(Math.min(gl.drawingBufferWidth / gl.drawingBufferHeight, 2));
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(width / height, 2));
+    renderer.setClearColor(sceneColor);
 
-    // Clear background to dark gray so we can see if rendering works
-    renderer.setClearColor(0x222222);
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    camera.position.set(0, 0, 3);
+    setCamera(camera);
+
+    const scene = new THREE.Scene();
 
     // ============================================
     // TEST 1: Triangle with vertex colors
@@ -96,48 +93,32 @@ export default function Planetarium() {
     scene.add(directionalLight);
 
     // Animation loop
-    const animate = () => {
-      animationFrameRef.current = requestAnimationFrame(animate);
-
-      // Rotate both objects for visual clarity
+    const update = () => {
       triangle.rotation.z += 0.01;
       plane.rotation.z -= 0.01;
 
-      // Update frustum for visibility checks
+      // Optional: Frustum checks for debugging
       const frustum = new THREE.Frustum();
       frustum.setFromProjectionMatrix(camera.projectionMatrix);
-
-      // Check if objects are in the camera frustum
-      const triangleInFrustum = frustum.intersectsObject(triangle);
-      const planeInFrustum = frustum.intersectsObject(plane);
-
-      // Log visibility status (only once per second to avoid spam)
+      
       const now = Date.now();
       if (now % 1000 < 50) {
-        console.log('=== Frustum Check ===');
-        console.log(`Triangle ${triangleInFrustum ? 'IN' : 'OUT'} of frustum`);
-        console.log(`Plane ${planeInFrustum ? 'IN' : 'OUT'} of frustum`);
-        console.log(`Camera position: z=${camera.position.z}`);
-        console.log(`Plane position: x=${plane.position.x}`);
-        
-        // Calculate frustum width at object's z-position
-        const fovRad = (75 * Math.PI) / 180;
-        const distance = camera.position.z; // objects are at z=0
-        const halfWidth = distance * Math.tan(fovRad / 2);
-        console.log(`Frustum half-width at z=0: ~${halfWidth.toFixed(2)}`);
-        console.log(`====================`);
+        const triangleInFrustum = frustum.intersectsObject(triangle);
+        const planeInFrustum = frustum.intersectsObject(plane);
+        console.log(`Triangle: ${triangleInFrustum ? 'IN' : 'OUT'}, Plane: ${planeInFrustum ? 'IN' : 'OUT'}`);
       }
-
-      renderer.render(scene, camera);
     };
 
-    animate();
+    // Setup an animation loop
+    const render = () => {
+      timeout = requestAnimationFrame(render);
+      update();
+      renderer.render(scene, camera);
+    };
+    render();
 
-    // Cleanup function returned from onContextCreate
+    // Cleanup
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
       renderer.dispose();
       triangleGeometry.dispose();
       triangleMaterial.dispose();
@@ -147,50 +128,5 @@ export default function Planetarium() {
     };
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <GLView style={styles.glView} onContextCreate={onContextCreate} />
-      <View style={styles.overlay}>
-        <Text style={styles.title}>3D Rendering Test</Text>
-        <Text style={styles.subtitle}>
-          Left: Colored Triangle • Right: White Texture
-        </Text>
-      </View>
-    </SafeAreaView>
-  );
+  return <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
-  glView: {
-    flex: 1,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 10,
-    pointerEvents: 'none',
-  },
-  title: {
-    color: '#FFFFFF',
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  subtitle: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 16,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-});
