@@ -1,97 +1,104 @@
 import { GLView } from 'expo-gl';
-import * as THREE from 'expo-three';
-import { Renderer } from 'expo-three';
+import * as ExpoTHREE from 'expo-three';
+const THREE = ExpoTHREE.THREE;
+const Renderer = ExpoTHREE.Renderer;
 import React, { useRef } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 
 export default function Planetarium() {
   const animationFrameRef = useRef<number | null>(null);
 
-  const onContextCreate = async (gl: unknown) => {
+  const onContextCreate = async (gl: any) => {
     // Create scene
     const scene = new THREE.Scene();
 
-    // Create camera positioned at the center
+    // Create camera
     const camera = new THREE.PerspectiveCamera(
       75,
       gl.drawingBufferWidth / gl.drawingBufferHeight,
       0.1,
       1000
     );
-    camera.position.z = 0;
+    camera.position.z = 3;
 
     // Create renderer using expo-three
-    const renderer = new Renderer({ gl, antialias: true, alpha: true });
+    const renderer = new Renderer({ gl, antialias: true });
     renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
     renderer.setPixelRatio(Math.min(gl.drawingBufferWidth / gl.drawingBufferHeight, 2));
 
-    // Create test texture using canvas
-    const createTestTexture = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
+    // Clear background to dark gray so we can see if rendering works
+    renderer.setClearColor(0x222222);
 
-      if (!ctx) return null;
+    // ============================================
+    // TEST 1: Triangle with vertex colors
+    // ============================================
+    const triangleGeometry = new THREE.BufferGeometry();
+    const trianglePositions = new Float32Array([
+      -1, -1, 0, // vertex 1 (bottom-left)
+       1, -1, 0, // vertex 2 (bottom-right)
+       0,  1, 0  // vertex 3 (top-center)
+    ]);
+    const triangleColors = new Float32Array([
+      1, 0, 0, // red
+      0, 1, 0, // green
+      0, 0, 1  // blue
+    ]);
+    triangleGeometry.setAttribute('position', new THREE.BufferAttribute(trianglePositions, 3));
+    triangleGeometry.setAttribute('color', new THREE.BufferAttribute(triangleColors, 3));
 
-      // Create a colorful gradient pattern
-      const gradient = ctx.createLinearGradient(0, 0, 512, 512);
-      gradient.addColorStop(0, '#ff0000');
-      gradient.addColorStop(0.25, '#ffff00');
-      gradient.addColorStop(0.5, '#00ff00');
-      gradient.addColorStop(0.75, '#00ffff');
-      gradient.addColorStop(1, '#0000ff');
-
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 512, 512);
-
-      // Add some checkerboard pattern
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      for (let i = 0; i < 512; i += 64) {
-        for (let j = 0; j < 512; j += 64) {
-          if ((i / 64 + j / 64) % 2 === 0) {
-            ctx.fillRect(i, j, 64, 64);
-          }
-        }
-      }
-
-      // Add some text
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 48px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('PLANETARIUM', 256, 256);
-
-      return new THREE.CanvasTexture(canvas);
-    };
-
-    // Create sphere geometry (large enough to surround the camera)
-    const sphereGeometry = new THREE.SphereGeometry(10, 64, 64);
-
-    // Create material with backside rendering (so we see the inside)
-    const texture = createTestTexture();
-    const sphereMaterial = new THREE.MeshStandardMaterial({
-      map: texture,
-      side: THREE.BackSide,
-      roughness: 0.5,
-      metalness: 0.1,
+    const triangleMaterial = new THREE.MeshBasicMaterial({ 
+      vertexColors: true,
+      side: THREE.DoubleSide
     });
+    const triangle = new THREE.Mesh(triangleGeometry, triangleMaterial);
+    scene.add(triangle);
 
-    // Add ambient light for illumination
+    // ============================================
+    // TEST 2: DataTexture filled with white pixels
+    // ============================================
+    const textureSize = 256;
+    const data = new Uint8Array(4 * textureSize * textureSize);
+    // Fill with white pixels (R=255, G=255, B=255, A=255)
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 255;     // R
+      data[i + 1] = 255; // G
+      data[i + 2] = 255; // B
+      data[i + 3] = 255; // A
+    }
+    
+    const whiteTexture = new THREE.DataTexture(
+      data,
+      textureSize,
+      textureSize,
+      THREE.RGBAFormat
+    );
+    
+    const planeGeometry = new THREE.PlaneGeometry(1.5, 1.5);
+    const planeMaterial = new THREE.MeshBasicMaterial({ 
+      map: whiteTexture,
+      side: THREE.DoubleSide
+    });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.position.x = 2; // Offset to the right of triangle
+    scene.add(plane);
+
+    // ============================================
+    // Add some lighting (good practice)
+    // ============================================
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Create sphere mesh
-    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-    scene.add(sphere);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    scene.add(directionalLight);
 
     // Animation loop
     const animate = () => {
       animationFrameRef.current = requestAnimationFrame(animate);
 
-      // Slowly rotate the sphere
-      sphere.rotation.y += 0.001;
-      sphere.rotation.x += 0.0005;
+      // Rotate both objects for visual clarity
+      triangle.rotation.z += 0.01;
+      plane.rotation.z -= 0.01;
 
       renderer.render(scene, camera);
     };
@@ -104,9 +111,11 @@ export default function Planetarium() {
         cancelAnimationFrame(animationFrameRef.current);
       }
       renderer.dispose();
-      sphereGeometry.dispose();
-      sphereMaterial.dispose();
-      if (texture) texture.dispose();
+      triangleGeometry.dispose();
+      triangleMaterial.dispose();
+      planeGeometry.dispose();
+      planeMaterial.dispose();
+      whiteTexture.dispose();
     };
   };
 
@@ -114,8 +123,10 @@ export default function Planetarium() {
     <View style={styles.container}>
       <GLView style={styles.glView} onContextCreate={onContextCreate} />
       <View style={styles.overlay}>
-        <Text style={styles.title}>Planetarium</Text>
-        <Text style={styles.subtitle}>Inside a sphere with test texture</Text>
+        <Text style={styles.title}>3D Rendering Test</Text>
+        <Text style={styles.subtitle}>
+          Left: Colored Triangle • Right: White Texture
+        </Text>
       </View>
     </View>
   );
@@ -125,6 +136,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  glView: {
+    flex: 1,
   },
   overlay: {
     position: 'absolute',
