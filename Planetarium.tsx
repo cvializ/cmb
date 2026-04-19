@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
+import { Asset } from 'expo-asset';
 import * as THREE from 'three';
 import { Renderer } from 'expo-three';
 import { TextureLoader } from 'three';
@@ -14,7 +15,7 @@ export default function Planetarium() {
     return () => clearTimeout(timeout);
   }, []);
 
-                                const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
+  const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
     const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
     const sceneColor = 0x6ad6f0;
 
@@ -31,9 +32,9 @@ export default function Planetarium() {
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-    // Load texture
+    // Load texture using expo-asset
     const textureLoader = new TextureLoader();
-    const texture = textureLoader.load(require('../assets/icon.png'));
+    const texture = textureLoader.load(Asset.fromModule(require('../assets/icon.png')).uri);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(2, 2);
