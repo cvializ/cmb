@@ -3,7 +3,7 @@ import * as ExpoTHREE from 'expo-three';
 const THREE = ExpoTHREE.THREE;
 const Renderer = ExpoTHREE.Renderer;
 import React, { useRef } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, SafeAreaView } from 'react-native';
 
 export default function Planetarium() {
   const animationFrameRef = useRef<number | null>(null);
@@ -105,7 +105,7 @@ export default function Planetarium() {
 
     animate();
 
-    // Cleanup
+    // Cleanup function returned from onContextCreate
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -120,7 +120,7 @@ export default function Planetarium() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <GLView style={styles.glView} onContextCreate={onContextCreate} />
       <View style={styles.overlay}>
         <Text style={styles.title}>3D Rendering Test</Text>
@@ -128,7 +128,7 @@ export default function Planetarium() {
           Left: Colored Triangle • Right: White Texture
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -147,15 +147,22 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     zIndex: 10,
+    pointerEvents: 'none',
   },
   title: {
     color: '#FFFFFF',
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.7)',
     fontSize: 16,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
