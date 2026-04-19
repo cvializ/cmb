@@ -12,8 +12,11 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "dependencies": {
+    "@types/three": "^0.184.0",
     "expo": "~54.0.33",
+    "expo-gl": "^55.0.13",
     "expo-status-bar": "~3.0.9",
+    "expo-three": "^8.0.0",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "three": "^0.184.0"

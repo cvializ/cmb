@@ -1,33 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import { GLView } from 'expo-gl';
+import * as THREE from 'expo-three';
+import { Renderer } from 'expo-three';
+import React, { useRef } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import * as THREE from 'three';
 
 export default function Planetarium() {
-  const containerRef = useRef<View>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
+  const onContextCreate = async (gl: unknown) => {
     // Create scene
     const scene = new THREE.Scene();
 
     // Create camera positioned at the center
     const camera = new THREE.PerspectiveCamera(
       75,
-      containerRef.current.width / containerRef.current.height,
+      gl.drawingBufferWidth / gl.drawingBufferHeight,
       0.1,
       1000
     );
     camera.position.z = 0;
 
-    // Create renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(containerRef.current.width, containerRef.current.height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    containerRef.current.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
+    // Create renderer using expo-three
+    const renderer = new Renderer({ gl, antialias: true, alpha: true });
+    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+    renderer.setPixelRatio(Math.min(gl.drawingBufferWidth / gl.drawingBufferHeight, 2));
 
     // Create test texture using canvas
     const createTestTexture = () => {
@@ -96,33 +92,21 @@ export default function Planetarium() {
 
     animate();
 
-    // Handle window resize
-    const handleResize = () => {
-      if (!containerRef.current) return;
-      const width = containerRef.current.width;
-      const height = containerRef.current.height;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-
-    window.addEventListener('resize', handleResize);
-
     // Cleanup
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      window.removeEventListener('resize', handleResize);
       renderer.dispose();
       sphereGeometry.dispose();
       sphereMaterial.dispose();
       if (texture) texture.dispose();
     };
-  }, []);
+  };
 
   return (
-    <View style={styles.container} ref={containerRef}>
+    <View style={styles.container}>
+      <GLView style={styles.glView} onContextCreate={onContextCreate} />
       <View style={styles.overlay}>
         <Text style={styles.title}>Planetarium</Text>
         <Text style={styles.subtitle}>Inside a sphere with test texture</Text>
@@ -134,7 +118,7 @@ export default function Planetarium() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#000000',
   },
   overlay: {
     position: 'absolute',
@@ -145,7 +129,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   title: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 8,
