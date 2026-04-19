@@ -42,9 +42,9 @@ export default function Planetarium() {
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
-    const cube = new THREE.Mesh(
+        const cube = new THREE.Mesh(
       new THREE.BoxGeometry(1.0, 1.0, 1.0),
-      new THREE.MeshStandardMaterial()
+      new THREE.MeshStandardMaterial({ color: 0xff0000 })
     );
     scene.add(cube);
 
