@@ -12,16 +12,16 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix"
   },
   "dependencies": {
-    "@types/three": "^0.184.0",
+    "@types/three": "0.184.0",
     "expo": "~54.0.33",
     "expo-asset": "~12.0.12",
     "expo-file-system": "~19.0.21",
-    "expo-gl": "~16.0.10",
+    "expo-gl": "~54.0.17",
     "expo-status-bar": "~3.0.9",
-    "expo-three": "^8.0.0",
+    "expo-three": "^7.0.1",
     "react": "19.1.0",
     "react-native": "0.81.5",
-    "three": "^0.184.0"
+    "three": "0.184.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
