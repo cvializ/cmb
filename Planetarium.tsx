@@ -70,10 +70,16 @@ export default function Planetarium() {
 
     // Create material with backside rendering (so we see the inside)
     const texture = createTestTexture();
-    const sphereMaterial = new THREE.MeshBasicMaterial({
+    const sphereMaterial = new THREE.MeshStandardMaterial({
       map: texture,
       side: THREE.BackSide,
+      roughness: 0.5,
+      metalness: 0.1,
     });
+
+    // Add ambient light for illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
 
     // Create sphere mesh
     const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
