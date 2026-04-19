@@ -105,10 +105,7 @@ export default function Planetarium() {
 
       // Update frustum for visibility checks
       const frustum = new THREE.Frustum();
-      frustum.setFromProjectionMatrix(
-        camera.projectionMatrix,
-        camera.modelViewMatrix
-      );
+      frustum.setFromProjectionMatrix(camera.projectionMatrix);
 
       // Check if objects are in the camera frustum
       const triangleInFrustum = frustum.intersectsObject(triangle);
