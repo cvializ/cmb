@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import * as THREE from 'three';
 import { Renderer } from 'expo-three';
+import { TextureLoader } from 'three';
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
@@ -13,7 +14,7 @@ export default function Planetarium() {
     return () => clearTimeout(timeout);
   }, []);
 
-  const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
+                                const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
     const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
     const sceneColor = 0x6ad6f0;
 
@@ -30,21 +31,34 @@ export default function Planetarium() {
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-    const ambientLight = new THREE.AmbientLight(0x101010);
+    // Load texture
+    const textureLoader = new TextureLoader();
+    const texture = textureLoader.load(require('../assets/icon.png'));
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2, 2);
+
+    // Create lights with better intensities
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
     scene.add(ambientLight);
 
     const pointLight = new THREE.PointLight(0xffffff, 2, 1000, 1);
     pointLight.position.set(0, 200, 200);
     scene.add(pointLight);
 
-    const spotLight = new THREE.SpotLight(0xffffff, 0.5);
+    const spotLight = new THREE.SpotLight(0xffffff, 2);
     spotLight.position.set(0, 500, 100);
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
-                const cube = new THREE.Mesh(
+    // Create cube with standard material and texture
+    const cube = new THREE.Mesh(
       new THREE.BoxGeometry(1.0, 1.0, 1.0),
-      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+      new THREE.MeshStandardMaterial({
+        map: texture,
+        roughness: 0.5,
+        metalness: 0.1,
+      })
     );
     scene.add(cube);
 
