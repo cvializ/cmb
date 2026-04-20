@@ -29,7 +29,7 @@ export default function Planetarium() {
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-    const texture = await loadAsync(require('./texture.png'));
+        const texture = await loadAsync(require('./sphere.png'));
 
     // Create lights with better intensities
     const ambientLight = new THREE.AmbientLight(0xFFFFFF, .5);
@@ -44,22 +44,23 @@ export default function Planetarium() {
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
-    // Create cube with standard material and texture
-    const cube = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 1.0, 1.0),
+    // Create sphere with standard material and texture (inside-out mapping)
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 64, 64),
       new THREE.MeshStandardMaterial({
         map: texture,
+        side: THREE.BackSide,
         roughness: 0.5,
         metalness: 0.1,
       })
     );
-    scene.add(cube);
+    scene.add(sphere);
 
-    camera.lookAt(cube.position);
+    camera.lookAt(sphere.position);
 
     const update = () => {
-      cube.rotation.y += 0.05;
-      cube.rotation.x += 0.025;
+      sphere.rotation.y += 0.05;
+      sphere.rotation.x += 0.025;
     };
 
     // Setup an animation loop
