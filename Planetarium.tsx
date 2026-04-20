@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
-import { Asset } from 'expo-asset';
-import * as THREE from 'three';
-import { Renderer } from 'expo-three';
-import { TextureLoader } from 'three';
+import { THREE, Renderer, loadAsync } from 'expo-three';
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
@@ -32,23 +29,18 @@ export default function Planetarium() {
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-    // Load texture using expo-asset
-    const textureLoader = new TextureLoader();
-    const texture = textureLoader.load(Asset.fromModule(require('../assets/icon.png')).uri);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2, 2);
+    const texture = await loadAsync(require('./texture.png'));
 
     // Create lights with better intensities
-    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    const ambientLight = new THREE.AmbientLight(0xFFFFFF, .5);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffffff, 2, 1000, 1);
-    pointLight.position.set(0, 200, 200);
+    const pointLight = new THREE.PointLight(0xffffff, 10, 1000, 1);
+    pointLight.position.set(0, 100, 100);
     scene.add(pointLight);
 
-    const spotLight = new THREE.SpotLight(0xffffff, 2);
-    spotLight.position.set(0, 500, 100);
+    const spotLight = new THREE.SpotLight(0xffffff, 10);
+    spotLight.position.set(0, 10, 10);
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
