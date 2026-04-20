@@ -22,7 +22,7 @@ export default function Planetarium() {
     renderer.setClearColor(sceneColor);
 
     const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-    camera.position.set(2, 5, 5);
+    camera.position.set(0, 0, 0);
     setCamera(camera);
 
     const scene = new THREE.Scene();
@@ -55,8 +55,6 @@ export default function Planetarium() {
       })
     );
     scene.add(sphere);
-
-    camera.lookAt(sphere.position);
 
     const update = () => {
       sphere.rotation.y += 0.05;
