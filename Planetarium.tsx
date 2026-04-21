@@ -1,9 +1,9 @@
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { THREE, Renderer, loadAsync } from 'expo-three';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
 
-import { useDeviceOrientation } from './useDeviceOrientation';
+import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
 
 
 export default function Planetarium() {
@@ -13,6 +13,7 @@ export default function Planetarium() {
   const sensitivity = 1;
   const [showDebug, setShowDebug] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const orientationRef = useRef<DeviceOrientation|null>(null);
 
   let timeout: number;
 
@@ -21,6 +22,10 @@ export default function Planetarium() {
     sensitivity,
     deadzone: 2.0,
   });
+
+  orientationRef.current = orientation;
+
+  console.log('NEW ORIENTATION', orientation);
 
   useEffect(() => {
     return () => clearTimeout(timeout);
@@ -84,17 +89,19 @@ export default function Planetarium() {
     let currentCamera = camera;
 
     const update = () => {
-      if (deviceControlEnabled && orientation) {
-        currentCamera.rotation.y = orientation.gamma * (Math.PI / 180);
-        currentCamera.rotation.x = orientation.beta * (Math.PI / 180);
-        currentCamera.rotation.z = orientation.alpha * (Math.PI / 180);
+      const orientation = orientationRef.current;
+
+      console.log('UPDATE', orientation);
+      if (orientation) {
+        currentCamera.rotation.y = orientation.gamma;
+        currentCamera.rotation.x = orientation.beta;
+        currentCamera.rotation.z = orientation.alpha;
       }
-
-
     };
 
     const render = () => {
       timeout = requestAnimationFrame(render);
+      console.log('UPDATEEE');
       update();
       renderer.render(scene, currentCamera);
       gl.endFrameEXP();

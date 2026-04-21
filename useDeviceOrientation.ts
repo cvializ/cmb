@@ -1,7 +1,7 @@
 import { DeviceMotion } from 'expo-sensors';
 import { useState, useCallback, useEffect } from 'react';
 
-interface DeviceOrientation {
+export interface DeviceOrientation {
   alpha: number;
   beta: number;
   gamma: number;
@@ -69,9 +69,9 @@ export function useDeviceOrientation(
 
     const handleMotion = (event: DeviceMotion.DeviceMotionEvent) => {
       console.log('MOTION EVENT', event);
-      if (!enable || !event.rotationRate) return;
+      if (!enable || !event.rotation) return;
 
-      const { alpha, beta, gamma } = event.rotationRate;
+      const { alpha, beta, gamma } = event.rotation;
 
       // Only update if we have valid rotation data
       if (alpha === null || beta === null || gamma === null) return;
@@ -83,20 +83,18 @@ export function useDeviceOrientation(
         return value;
       };
 
-      const filteredAlpha = applyDeadzone(alpha);
-      const filteredBeta = applyDeadzone(beta);
-      const filteredGamma = applyDeadzone(gamma);
+      // const filteredAlpha = applyDeadzone(alpha);
+      // const filteredBeta = applyDeadzone(beta);
+      // const filteredGamma = applyDeadzone(gamma);
 
-      const scaledAlpha = filteredAlpha * sensitivity;
-      const scaledBeta = filteredBeta * sensitivity;
-      const scaledGamma = filteredGamma * sensitivity;
-
-      console.log('ORIENTED', scaledAlpha, scaledBeta, scaledGamma);
+      // const scaledAlpha = filteredAlpha * sensitivity;
+      // const scaledBeta = filteredBeta * sensitivity;
+      // const scaledGamma = filteredGamma * sensitivity;
 
       setOrientation({
-        alpha: scaledAlpha,
-        beta: scaledBeta,
-        gamma: scaledGamma,
+        alpha: alpha,
+        beta: beta,
+        gamma: gamma,
       });
     };
 
