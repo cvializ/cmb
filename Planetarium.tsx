@@ -1,22 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { THREE, Renderer, loadAsync } from 'expo-three';
+import { useDeviceOrientation } from './useDeviceOrientation';
+import { StyleSheet, View, Text, TouchableOpacity, Switch, Slider } from 'react-native';
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
+  const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
+  const [sensitivity, setSensitivity] = useState(1.0);
+  const [showDebug, setShowDebug] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
 
   let timeout: number;
 
+  const { orientation, requestPermission, resetOrientation, isListening } = useDeviceOrientation({
+    enable: deviceControlEnabled,
+    sensitivity,
+    deadzone: 2.0,
+  });
+
   useEffect(() => {
-    // Clear the animation loop when the component unmounts
     return () => clearTimeout(timeout);
   }, []);
+
+  const handlePermissionRequest = async () => {
+    const granted = await requestPermission();
+    setPermissionGranted(granted);
+  };
+
+  const handleReset = () => {
+    resetOrientation();
+    if (camera) {
+      camera.rotation.set(0, 0, 0);
+    }
+  };
 
   const onContextCreate = async (gl: ExpoWebGLRenderingContext) => {
     const { drawingBufferWidth: width, drawingBufferHeight: height } = gl;
     const sceneColor = 0x6ad6f0;
 
-    // Create a WebGLRenderer without a DOM element
     const renderer = new Renderer({ gl });
     renderer.setSize(width, height);
     renderer.setClearColor(sceneColor);
@@ -29,9 +51,8 @@ export default function Planetarium() {
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-        const texture = await loadAsync(require('./sphere.png'));
+    const texture = await loadAsync(require('./sphere.png'));
 
-    // Create lights with better intensities
     const ambientLight = new THREE.AmbientLight(0xFFFFFF, .5);
     scene.add(ambientLight);
 
@@ -44,7 +65,6 @@ export default function Planetarium() {
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
-    // Create sphere with standard material and texture (inside-out mapping)
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(1.5, 64, 64),
       new THREE.MeshStandardMaterial({
@@ -57,11 +77,18 @@ export default function Planetarium() {
     scene.add(sphere);
 
     const update = () => {
-      sphere.rotation.y += 0.05;
-      sphere.rotation.x += 0.025;
+      if (deviceControlEnabled && orientation) {
+        camera.rotation.y = orientation.gamma * (Math.PI / 180);
+        camera.rotation.x = orientation.beta * (Math.PI / 180);
+        camera.rotation.z = orientation.alpha * (Math.PI / 180);
+      }
+
+      if (!deviceControlEnabled) {
+        sphere.rotation.y += 0.05;
+        sphere.rotation.x += 0.025;
+      }
     };
 
-    // Setup an animation loop
     const render = () => {
       timeout = requestAnimationFrame(render);
       update();
@@ -71,5 +98,134 @@ export default function Planetarium() {
     render();
   };
 
-  return <GLView style={{ flex: 1 }} onContextCreate={onContextCreate} />;
+  return (
+    <View style={styles.container}>
+      <GLView style={styles.glView} onContextCreate={onContextCreate} />
+
+      <View style={styles.controls}>
+        <Text style={styles.title}>Planetarium Controls</Text>
+
+        <View style={styles.controlRow}>
+          <Text style={styles.label}>Device Control</Text>
+          <Switch
+            value={deviceControlEnabled}
+            onValueChange={setDeviceControlEnabled}
+            trackColor={{ false: '#767577', true: '#4CAF50' }}
+          />
+        </View>
+
+        <View style={styles.controlRow}>
+          <Text style={styles.label}>Sensitivity: {sensitivity.toFixed(1)}x</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={0.1}
+            maximumValue={3.0}
+            step={0.1}
+            value={sensitivity}
+            onValueChange={setSensitivity}
+            disabled={!deviceControlEnabled}
+          />
+        </View>
+
+        {!permissionGranted && deviceControlEnabled && (
+          <TouchableOpacity style={styles.button} onPress={handlePermissionRequest}>
+            <Text style={styles.buttonText}>Request Permission</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity style={styles.button} onPress={handleReset}>
+          <Text style={styles.buttonText}>Reset Camera</Text>
+        </TouchableOpacity>
+
+        {showDebug && (
+          <View style={styles.debugPanel}>
+            <Text style={styles.debugTitle}>Debug Info</Text>
+            <Text style={styles.debugText}>Device Control: {deviceControlEnabled ? 'ON' : 'OFF'}</Text>
+            <Text style={styles.debugText}>Listening: {isListening ? 'YES' : 'NO'}</Text>
+            {orientation && (
+              <>
+                <Text style={styles.debugText}>Alpha (Z): {orientation.alpha.toFixed(1)}°</Text>
+                <Text style={styles.debugText}>Beta (X): {orientation.beta.toFixed(1)}°</Text>
+                <Text style={styles.debugText}>Gamma (Y): {orientation.gamma.toFixed(1)}°</Text>
+              </>
+            )}
+            {!orientation && <Text style={styles.debugText}>No orientation data</Text>}
+          </View>
+        )}
+
+        <TouchableOpacity style={styles.button} onPress={() => setShowDebug(!showDebug)}>
+          <Text style={styles.buttonText}>{showDebug ? 'Hide Debug' : 'Show Debug'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  glView: {
+    flex: 1,
+  },
+  controls: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 16,
+    borderRadius: 12,
+    width: 280,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  controlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  label: {
+    color: '#fff',
+    fontSize: 14,
+    marginRight: 12,
+    minWidth: 100,
+  },
+  slider: {
+    flex: 1,
+  },
+  button: {
+    backgroundColor: '#2196F3',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  debugPanel: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  debugTitle: {
+    color: '#4CAF50',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  debugText: {
+    color: '#fff',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+});
