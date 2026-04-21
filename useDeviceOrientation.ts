@@ -1,4 +1,4 @@
-import { DeviceMotion } from 'expo-sensors';
+import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
 import { useState, useCallback, useEffect } from 'react';
 
 export interface DeviceOrientation {
@@ -67,7 +67,7 @@ export function useDeviceOrientation(
   useEffect(() => {
     let subscription: { remove(): void } | null = null;
 
-    const handleMotion = (event: DeviceMotion.DeviceMotionEvent) => {
+    const handleMotion = (event: DeviceMotionMeasurement) => {
       console.log('MOTION EVENT', event);
       if (!enable || !event.rotation) return;
 

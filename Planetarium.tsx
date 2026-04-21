@@ -127,9 +127,9 @@ export default function Planetarium() {
 
       console.log('UPDATE', orientation);
       if (orientation) {
-        currentCamera.rotation.y = orientation.gamma;
-        currentCamera.rotation.x = orientation.beta;
-        currentCamera.rotation.z = orientation.alpha;
+        // currentCamera.rotation.y = orientation.gamma; // vertical turn
+        currentCamera.rotation.x = orientation.beta; // pitch
+        currentCamera.rotation.z = orientation.alpha; // flat wrist turn
       }
     };
 
