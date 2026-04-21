@@ -7,7 +7,8 @@ import { StyleSheet, View, Text, TouchableOpacity, Switch, Slider } from 'react-
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
-  const [sensitivity, setSensitivity] = useState(1.0);
+  // const [sensitivity, setSensitivity] = useState(1.0);
+  const sensitivity = 1;
   const [showDebug, setShowDebug] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
 
@@ -116,14 +117,6 @@ export default function Planetarium() {
 
         <View style={styles.controlRow}>
           <Text style={styles.label}>Sensitivity: {sensitivity.toFixed(1)}x</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0.1}
-            maximumValue={3.0}
-            step={0.1}
-            value={sensitivity}
-            onValueChange={setSensitivity}
-            disabled={!deviceControlEnabled}
           />
         </View>
 
