@@ -1,6 +1,7 @@
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { THREE, Renderer, loadAsync } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
+import { ArrowHelper } from 'expo-three';
 import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
 
 import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
@@ -59,6 +60,39 @@ export default function Planetarium() {
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
+
+    // X-axis arrow (Red)
+    const xAxis = new THREE.ArrowHelper(
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(0, 0, 0),
+      2.5,
+      0xff0000,
+      0.5,
+      0.3
+    );
+    scene.add(xAxis);
+
+    // Y-axis arrow (Green)
+    const yAxis = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, 0, 0),
+      2.5,
+      0x00ff00,
+      0.5,
+      0.3
+    );
+    scene.add(yAxis);
+
+    // Z-axis arrow (Blue)
+    const zAxis = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(0, 0, 0),
+      2.5,
+      0x0000ff,
+      0.5,
+      0.3
+    );
+    scene.add(zAxis);
 
     const texture = await loadAsync(require('./sphere.png'));
 
