@@ -89,10 +89,7 @@ export default function Planetarium() {
         currentCamera.rotation.z = orientation.alpha * (Math.PI / 180);
       }
 
-      if (!deviceControlEnabled) {
-        sphere.rotation.y += 0.05;
-        sphere.rotation.x += 0.025;
-      }
+
     };
 
     const render = () => {
