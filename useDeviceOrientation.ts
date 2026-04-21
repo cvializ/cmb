@@ -68,6 +68,7 @@ export function useDeviceOrientation(
     let subscription: { remove(): void } | null = null;
 
     const handleMotion = (event: DeviceMotion.DeviceMotionEvent) => {
+      console.log('MOTION EVENT', event);
       if (!enable || !event.rotationRate) return;
 
       const { alpha, beta, gamma } = event.rotationRate;
@@ -89,6 +90,8 @@ export function useDeviceOrientation(
       const scaledAlpha = filteredAlpha * sensitivity;
       const scaledBeta = filteredBeta * sensitivity;
       const scaledGamma = filteredGamma * sensitivity;
+
+      console.log('ORIENTED', scaledAlpha, scaledBeta, scaledGamma);
 
       setOrientation({
         alpha: scaledAlpha,

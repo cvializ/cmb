@@ -28,6 +28,7 @@ export default function Planetarium() {
 
   const handlePermissionRequest = async () => {
     const granted = await requestPermission();
+    console.log('OKOKOKOK', granted);
     setPermissionGranted(granted);
   };
 
@@ -112,7 +113,13 @@ export default function Planetarium() {
           <Text style={styles.label}>Device Control</Text>
           <Switch
             value={deviceControlEnabled}
-            onValueChange={setDeviceControlEnabled}
+            onValueChange={(value) => {
+              if (value) {
+                handlePermissionRequest();
+              }
+              console.log('WOWOWWOOW', value);
+              setDeviceControlEnabled(true);
+            }}
             trackColor={{ false: '#767577', true: '#4CAF50' }}
           />
         </View>
