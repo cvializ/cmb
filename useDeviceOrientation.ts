@@ -1,4 +1,5 @@
-import { DeviceMotionEvent, setMotionPermissionsAsync } from 'expo-sensors';
+import { DeviceMotion } from 'expo-sensors';
+import { useState, useCallback, useEffect } from 'react';
 
 interface DeviceOrientation {
   alpha: number;
@@ -10,7 +11,6 @@ interface UseDeviceOrientationOptions {
   enable?: boolean;
   sensitivity?: number;
   deadzone?: number;
-  onPermissionRequest?: () => Promise<boolean>;
 }
 
 interface UseDeviceOrientationReturn {
@@ -24,7 +24,6 @@ const DEFAULT_OPTIONS: Required<UseDeviceOrientationOptions> = {
   enable: true,
   sensitivity: 1.0,
   deadzone: 2.0,
-  onPermissionRequest: undefined,
 };
 
 export function useDeviceOrientation(
@@ -34,7 +33,6 @@ export function useDeviceOrientation(
     enable = DEFAULT_OPTIONS.enable,
     sensitivity = DEFAULT_OPTIONS.sensitivity,
     deadzone = DEFAULT_OPTIONS.deadzone,
-    onPermissionRequest = DEFAULT_OPTIONS.onPermissionRequest,
   } = options;
 
   const [orientation, setOrientation] = useState<DeviceOrientation | null>(null);
@@ -42,22 +40,27 @@ export function useDeviceOrientation(
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const granted = await setMotionPermissionsAsync(true);
-      if (granted) {
-        setIsListening(true);
-        return true;
-      }
-      return false;
+      await DeviceMotion.isAvailableAsync();
+      setIsListening(true);
+      return true;
     } catch (error) {
-      console.error('Error requesting motion permissions:', error);
+      console.error('Error checking device motion availability:', error);
       return false;
     }
   }, []);
 
   useEffect(() => {
-    let subscription: any = null;
+    let subscription: { remove(): void } | null = null;
 
-    const handleMotion = (event: DeviceMotionEvent) => {
+    interface DeviceOrientationEvent {
+      rotation: {
+        alpha: number;
+        beta: number;
+        gamma: number;
+      };
+    }
+
+    const handleMotion = (event: DeviceOrientationEvent) => {
       if (!enable) return;
 
       const { alpha, beta, gamma } = event.rotation;
@@ -85,7 +88,7 @@ export function useDeviceOrientation(
     };
 
     if (enable) {
-      subscription = DeviceMotionEvent.addListener(handleMotion);
+      subscription = DeviceMotion.addListener(handleMotion);
       setIsListening(true);
     }
 

@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { THREE, Renderer, loadAsync } from 'expo-three';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
+
 import { useDeviceOrientation } from './useDeviceOrientation';
-import { StyleSheet, View, Text, TouchableOpacity, Switch, Slider } from 'react-native';
+
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
@@ -117,7 +119,6 @@ export default function Planetarium() {
 
         <View style={styles.controlRow}>
           <Text style={styles.label}>Sensitivity: {sensitivity.toFixed(1)}x</Text>
-          />
         </View>
 
         {!permissionGranted && deviceControlEnabled && (
@@ -187,9 +188,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 12,
     minWidth: 100,
-  },
-  slider: {
-    flex: 1,
   },
   button: {
     backgroundColor: '#2196F3',
