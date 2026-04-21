@@ -14,7 +14,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.my-expo-app"
+      "bundleIdentifier": "com.anonymous.my-expo-app",
+      "infoPlists": {
+        "NSMotionUsageDescription": "for planetarium AR",
+        "NSMachPortUsageDescription": "Required for device motion tracking"
+      }
     },
     "android": {
       "adaptiveIcon": {
