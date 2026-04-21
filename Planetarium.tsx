@@ -79,11 +79,14 @@ export default function Planetarium() {
     );
     scene.add(sphere);
 
+    // Capture camera reference for update loop
+    let currentCamera = camera;
+
     const update = () => {
       if (deviceControlEnabled && orientation) {
-        camera.rotation.y = orientation.gamma * (Math.PI / 180);
-        camera.rotation.x = orientation.beta * (Math.PI / 180);
-        camera.rotation.z = orientation.alpha * (Math.PI / 180);
+        currentCamera.rotation.y = orientation.gamma * (Math.PI / 180);
+        currentCamera.rotation.x = orientation.beta * (Math.PI / 180);
+        currentCamera.rotation.z = orientation.alpha * (Math.PI / 180);
       }
 
       if (!deviceControlEnabled) {
@@ -95,7 +98,7 @@ export default function Planetarium() {
     const render = () => {
       timeout = requestAnimationFrame(render);
       update();
-      renderer.render(scene, camera);
+      renderer.render(scene, currentCamera);
       gl.endFrameEXP();
     };
     render();
