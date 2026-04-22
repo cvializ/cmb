@@ -1,12 +1,13 @@
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { THREE, Renderer, loadAsync } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowHelper } from 'expo-three';
 import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
 
 import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
 import { DeviceCompass, useCompass } from './useCompass';
 
+
+const radianToDegree = (radian: number) => radian * 180 / Math.PI;
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
@@ -17,6 +18,7 @@ export default function Planetarium() {
     const [permissionGranted, setPermissionGranted] = useState(false);
   const [compass, setCompass] = useState<DeviceCompass | null>(null);
   const orientationRef = useRef<DeviceOrientation|null>(null);
+  const compassDataRef = useRef<DeviceCompass|null>(null);
 
   let timeout: number;
 
@@ -31,7 +33,7 @@ export default function Planetarium() {
   });
 
   orientationRef.current = orientation;
-
+  compassDataRef.current = compassData;
   console.log('NEW ORIENTATION', orientation);
 
   useEffect(() => {
@@ -42,7 +44,6 @@ export default function Planetarium() {
     const motionGranted = await requestPermission();
     const compassGranted = await requestCompassPermission();
     const granted = motionGranted && compassGranted;
-    console.log('OKOKOKOK', motionGranted, compassGranted);
     setPermissionGranted(granted);
   };
 
@@ -127,19 +128,17 @@ export default function Planetarium() {
     );
     scene.add(sphere);
 
-    // Capture camera reference for update loop
-    let currentCamera = camera;
-
     const update = () => {
       const orientation = orientationRef.current;
+      const compassData = compassDataRef.current;
 
       console.log('UPDATE', orientation);
       if (orientation) {
-        currentCamera.rotation.x = orientation.beta; // pitch
-        currentCamera.rotation.z = orientation.alpha; // flat wrist turn
+        camera.rotation.x = -orientation.beta + Math.PI / 2; // pitch
+        // camera.rotation.z = orientation.alpha; // flat wrist turn
         // Use compass heading for Y rotation
         if (compassData) {
-          currentCamera.rotation.y = compassData.heading;
+          camera.rotation.y = compassData.heading * Math.PI / 180;
         }
       }
     };
@@ -148,7 +147,7 @@ export default function Planetarium() {
       timeout = requestAnimationFrame(render);
       console.log('UPDATEEE');
       update();
-      renderer.render(scene, currentCamera);
+      renderer.render(scene, camera);
       gl.endFrameEXP();
     };
     render();
@@ -198,14 +197,14 @@ export default function Planetarium() {
             <Text style={styles.debugText}>Compass: {compassListening ? 'YES' : 'NO'}</Text>
             {orientation && (
               <>
-                <Text style={styles.debugText}>Alpha (Z): {orientation.alpha.toFixed(1)}°</Text>
-                <Text style={styles.debugText}>Beta (X): {orientation.beta.toFixed(1)}°</Text>
-                <Text style={styles.debugText}>Gamma (Y): {orientation.gamma.toFixed(1)}°</Text>
+                <Text style={styles.debugText}>Alpha (Z): {radianToDegree(orientation.alpha)}°</Text>
+                <Text style={styles.debugText}>Beta (X): {radianToDegree(orientation.beta)}°</Text>
+                <Text style={styles.debugText}>Gamma (Y): {radianToDegree(orientation.gamma)}°</Text>
               </>
             )}
-            {compass && (
+            {compassData && (
               <>
-                <Text style={styles.debugText}>Compass Heading: {compass.heading.toFixed(1)}°</Text>
+                <Text style={styles.debugText}>Compass Heading: {compassData.heading.toFixed(1)}°</Text>
               </>
             )}
             {!orientation && !compass && <Text style={styles.debugText}>No sensor data</Text>}

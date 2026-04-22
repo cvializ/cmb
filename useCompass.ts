@@ -33,7 +33,7 @@ const DEFAULT_OPTIONS: Required<UseCompassOptions> = {
 const calculateHeading = (x: number, y: number): number => {
   const heading = Math.atan2(y, x); // radians
   let degrees = heading * (180 / Math.PI);
-  degrees = (degrees + 360) % 360;
+  degrees = (degrees + 360 - 90) % 360;
   return degrees;
 };
 
