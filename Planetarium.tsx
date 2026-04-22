@@ -5,6 +5,7 @@ import { ArrowHelper } from 'expo-three';
 import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
 
 import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
+import { DeviceCompass, useCompass } from './useCompass';
 
 
 export default function Planetarium() {
@@ -13,7 +14,8 @@ export default function Planetarium() {
   // const [sensitivity, setSensitivity] = useState(1.0);
   const sensitivity = 1;
   const [showDebug, setShowDebug] = useState(false);
-  const [permissionGranted, setPermissionGranted] = useState(false);
+    const [permissionGranted, setPermissionGranted] = useState(false);
+  const [compass, setCompass] = useState<DeviceCompass | null>(null);
   const orientationRef = useRef<DeviceOrientation|null>(null);
 
   let timeout: number;
@@ -22,6 +24,10 @@ export default function Planetarium() {
     enable: deviceControlEnabled,
     sensitivity,
     deadzone: 2.0,
+  });
+
+  const { compass: compassData, requestPermission: requestCompassPermission, isListening: compassListening } = useCompass({
+    enable: deviceControlEnabled,
   });
 
   orientationRef.current = orientation;
@@ -33,8 +39,10 @@ export default function Planetarium() {
   }, []);
 
   const handlePermissionRequest = async () => {
-    const granted = await requestPermission();
-    console.log('OKOKOKOK', granted);
+    const motionGranted = await requestPermission();
+    const compassGranted = await requestCompassPermission();
+    const granted = motionGranted && compassGranted;
+    console.log('OKOKOKOK', motionGranted, compassGranted);
     setPermissionGranted(granted);
   };
 
@@ -127,9 +135,12 @@ export default function Planetarium() {
 
       console.log('UPDATE', orientation);
       if (orientation) {
-        // currentCamera.rotation.y = orientation.gamma; // vertical turn
         currentCamera.rotation.x = orientation.beta; // pitch
         currentCamera.rotation.z = orientation.alpha; // flat wrist turn
+        // Use compass heading for Y rotation
+        if (compassData) {
+          currentCamera.rotation.y = compassData.heading;
+        }
       }
     };
 
@@ -184,6 +195,7 @@ export default function Planetarium() {
             <Text style={styles.debugTitle}>Debug Info</Text>
             <Text style={styles.debugText}>Device Control: {deviceControlEnabled ? 'ON' : 'OFF'}</Text>
             <Text style={styles.debugText}>Listening: {isListening ? 'YES' : 'NO'}</Text>
+            <Text style={styles.debugText}>Compass: {compassListening ? 'YES' : 'NO'}</Text>
             {orientation && (
               <>
                 <Text style={styles.debugText}>Alpha (Z): {orientation.alpha.toFixed(1)}°</Text>
@@ -191,7 +203,12 @@ export default function Planetarium() {
                 <Text style={styles.debugText}>Gamma (Y): {orientation.gamma.toFixed(1)}°</Text>
               </>
             )}
-            {!orientation && <Text style={styles.debugText}>No orientation data</Text>}
+            {compass && (
+              <>
+                <Text style={styles.debugText}>Compass Heading: {compass.heading.toFixed(1)}°</Text>
+              </>
+            )}
+            {!orientation && !compass && <Text style={styles.debugText}>No sensor data</Text>}
           </View>
         )}
 
