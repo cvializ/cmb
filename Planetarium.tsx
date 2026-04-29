@@ -163,19 +163,19 @@ export default function Planetarium() {
           -gammaRad
         );
 
-        // Combine: Yaw * Pitch * Roll
-        const deviceQuaternion = new THREE.Quaternion()
-          .multiply(quaternionYaw)
-          .multiply(quaternionPitch)
-          .multiply(quaternionRoll);
+        // Combine: Yaw * Pitch * Roll (no chaining — multiply() modifies in place)
+        const deviceQuaternion = new THREE.Quaternion().copy(quaternionYaw);
+        deviceQuaternion.multiply(quaternionPitch);
+        deviceQuaternion.multiply(quaternionRoll);
 
         // Reference: -90° around X-axis to align device frame with Three.js
         const referenceQuaternion = new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(-Math.PI / 2, 0, 0, 'YXZ')
+          new THREE.Euler(-Math.PI / 2, 0, 0)
         );
 
-        // Final quaternion
-        const finalQuaternion = deviceQuaternion.multiply(referenceQuaternion);
+        // Final quaternion: device rotation × reference alignment
+        const finalQuaternion = new THREE.Quaternion().copy(deviceQuaternion);
+        finalQuaternion.multiply(referenceQuaternion);
         camera.quaternion.copy(finalQuaternion);
 
         console.log(`Final Quaternion: ${finalQuaternion.x.toFixed(4)}, ${finalQuaternion.y.toFixed(4)}, ${finalQuaternion.z.toFixed(4)}, ${finalQuaternion.w.toFixed(4)}`);
