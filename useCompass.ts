@@ -85,18 +85,35 @@ export function useCompass(
       // Only update if we have valid readings
       if (x === null || y === null) return;
 
-      // Apply deadzone
-      const applyDeadzone = (value: number) => {
-        if (Math.abs(value) < deadzone) {
-          return 0;
+      const applyGradualAttenuation = (value: number) => {
+        if (!enable || deadzone <= 0.01) return value;
+
+        const absValue = Math.abs(value);
+        if (absValue <= deadzone) {
+          // Quadratic ramp from 0 at value=deadzone to ~1/3 attenuation factor
+          // This ensures smooth transition: derivative is continuous at the boundary.
+          const ratio = absValue / deadzone; // 0..1 within inner zone
+          return value * ratio * (2 - ratio); // smooth quadratic ramp: 0 → ~1/3
         }
-        return value;
+
+        const transitionWidth = Math.max(2.5, 0.1 * deadzone);
+        const t = (absValue - deadzone) / transitionWidth; // 0..1 in the outer zone
+
+        if (t >= 1.0) {
+          // Fully above deadzone — pass through unchanged
+          return value;
+        }
+
+        const smoothstep = t * t * (3 - 2 * t); // cubic Hermite interpolation
+        const attenuation = smoothstep;           // ~0 → 1 across transition zone
+
+        return value * (attenuation + ((1 - deadzone / absValue) || 0));
       };
 
-      const filteredX = applyDeadzone(x);
-      const filteredY = applyDeadzone(y);
+      const filteredX = applyGradualAttenuation(x);
+      const filteredY = applyGradualAttenuation(y);
 
-      // Calculate compass heading
+      // Calculate compass heading from attenuated magnetometer readings
       const heading = calculateHeading(filteredX, filteredY);
 
       setCompass({ heading });
