@@ -19,6 +19,7 @@ export default function Planetarium() {
   const [compass, setCompass] = useState<DeviceCompass | null>(null);
   const orientationRef = useRef<DeviceOrientation|null>(null);
   const compassDataRef = useRef<DeviceCompass|null>(null);
+  const deviceControlEnabledRef = useRef(false);
 
   let timeout: number;
 
@@ -34,6 +35,7 @@ export default function Planetarium() {
 
   orientationRef.current = orientation;
   compassDataRef.current = compassData;
+  deviceControlEnabledRef.current = deviceControlEnabled;
   console.log('NEW ORIENTATION', orientation);
 
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function Planetarium() {
       const compassData = compassDataRef.current;
 
       console.log('UPDATE', orientation);
-      if (orientation && deviceControlEnabled) {
+      if (orientation && deviceControlEnabledRef.current) {
         // Orientation data is already in radians from DeviceMotion sensor
         const alphaRad = orientation.alpha;  // Z-axis rotation (radians)
         const betaRad = orientation.beta;    // X-axis rotation (radians, pitch)
@@ -208,7 +210,7 @@ export default function Planetarium() {
                 handlePermissionRequest();
               }
               console.log('WOWOWWOOW', value);
-              setDeviceControlEnabled(true);
+              setDeviceControlEnabled(value);
             }}
             trackColor={{ false: '#767577', true: '#4CAF50' }}
           />
