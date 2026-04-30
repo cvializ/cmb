@@ -1,10 +1,12 @@
 import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
 import { useState, useCallback, useEffect } from 'react';
+import { THREE } from 'expo-three';
 
 export interface DeviceOrientation {
   alpha: number;
   beta: number;
   gamma: number;
+  quaternion: { x: number; y: number; z: number; w: number };
 }
 
 interface UseDeviceOrientationOptions {
@@ -91,10 +93,15 @@ export function useDeviceOrientation(
       // const scaledBeta = filteredBeta * sensitivity;
       // const scaledGamma = filteredGamma * sensitivity;
 
+      // Build quaternion from Euler angles (YXZ order: yaw→pitch→roll)
+      const euler = new THREE.Euler(beta, gamma, alpha, 'YXZ');
+      const quaternion = new THREE.Quaternion().setFromEuler(euler);
+
       setOrientation({
-        alpha: alpha,
-        beta: beta,
-        gamma: gamma,
+        alpha,
+        beta,
+        gamma,
+        quaternion: { x: quaternion.x, y: quaternion.y, z: quaternion.z, w: quaternion.w },
       });
     };
 

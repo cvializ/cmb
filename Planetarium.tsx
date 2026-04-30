@@ -136,39 +136,23 @@ export default function Planetarium() {
 
       console.log('UPDATE', orientation);
       if (orientation && deviceControlEnabledRef.current) {
-        // Orientation data is already in radians from DeviceMotion sensor
-        const alphaRad = orientation.alpha;  // Z-axis rotation (radians)
-        const betaRad = orientation.beta;    // X-axis rotation (radians, pitch)
-        const gammaRad = orientation.gamma;  // Y-axis rotation (radians, roll)
+        // Compass heading is in degrees from magnetometer — override yaw (alpha component)
+        let quaternion = new THREE.Quaternion().set(
+          orientation.quaternion.x,
+          orientation.quaternion.y,
+          orientation.quaternion.z,
+          orientation.quaternion.w,
+        );
 
-        // Compass heading is in degrees from magnetometer
-        let yawRad: number;
         if (compassData && compassData.heading !== undefined) {
-          yawRad = THREE.MathUtils.degToRad(compassData.heading);
+          const yawRad = THREE.MathUtils.degToRad(compassData.heading);
           console.log(`Using compass heading for yaw: ${compassData.heading}° → ${yawRad.toFixed(4)} rad`);
+          // Rebuild quaternion with compass yaw, keeping pitch and roll from device
+          const euler = new THREE.Euler(orientation.beta, orientation.gamma, yawRad, 'YXZ');
+          quaternion.setFromEuler(euler);
         } else {
-          yawRad = alphaRad;
-          console.log(`Using alpha for yaw: ${alphaRad.toFixed(4)} rad`);
+          console.log(`Using alpha for yaw: ${orientation.alpha.toFixed(4)} rad`);
         }
-
-        // Build quaternions: Yaw (Y-axis) * Pitch (X-axis) * Roll (Z-axis)
-        const quaternionYaw = new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(0, 1, 0), // Y-axis
-          yawRad
-        );
-        const quaternionPitch = new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(1, 0, 0), // X-axis
-          betaRad
-        );
-        const quaternionRoll = new THREE.Quaternion().setFromAxisAngle(
-          new THREE.Vector3(0, 0, 1), // Z-axis
-          -gammaRad
-        );
-
-        // Combine: Yaw * Pitch * Roll (no chaining — multiply() modifies in place)
-        const deviceQuaternion = new THREE.Quaternion().copy(quaternionYaw);
-        deviceQuaternion.multiply(quaternionPitch);
-        deviceQuaternion.multiply(quaternionRoll);
 
         // Reference: -90° around X-axis to align device frame with Three.js
         const referenceQuaternion = new THREE.Quaternion().setFromEuler(
@@ -176,7 +160,7 @@ export default function Planetarium() {
         );
 
         // Final quaternion: device rotation × reference alignment
-        const finalQuaternion = new THREE.Quaternion().copy(deviceQuaternion);
+        const finalQuaternion = new THREE.Quaternion().copy(quaternion);
         finalQuaternion.multiply(referenceQuaternion);
         camera.quaternion.copy(finalQuaternion);
 
