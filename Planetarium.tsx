@@ -12,8 +12,6 @@ const radianToDegree = (radian: number) => radian * 180 / Math.PI;
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
-  // const [sensitivity, setSensitivity] = useState(1.0);
-  const sensitivity = 1;
   const [showDebug, setShowDebug] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState(false);
   const [compass, setCompass] = useState<DeviceCompass | null>(null);
@@ -23,10 +21,8 @@ export default function Planetarium() {
 
   let timeout: number;
 
-  const { orientation, requestPermission, resetOrientation, isListening } = useDeviceOrientation({
+  const { orientation, requestPermission, isListening } = useDeviceOrientation({
     enable: deviceControlEnabled,
-    sensitivity,
-    deadzone: 2.0,
   });
 
   const { compass: compassData, requestPermission: requestCompassPermission, isListening: compassListening } = useCompass({
@@ -36,7 +32,6 @@ export default function Planetarium() {
   orientationRef.current = orientation;
   compassDataRef.current = compassData;
   deviceControlEnabledRef.current = deviceControlEnabled;
-  console.log('NEW ORIENTATION', orientation);
 
   useEffect(() => {
     return () => clearTimeout(timeout);
@@ -50,7 +45,6 @@ export default function Planetarium() {
   };
 
   const handleReset = () => {
-    resetOrientation();
     if (camera) {
       camera.rotation.set(0, 0, 0);
     }
@@ -134,7 +128,6 @@ export default function Planetarium() {
       const orientation = orientationRef.current;
       const compassData = compassDataRef.current;
 
-      console.log('UPDATE', orientation);
       if (orientation && deviceControlEnabledRef.current) {
         // Compass heading is in degrees from magnetometer — override yaw (alpha component)
         let quaternion = new THREE.Quaternion().set(
@@ -170,7 +163,6 @@ export default function Planetarium() {
 
     const render = () => {
       timeout = requestAnimationFrame(render);
-      console.log('UPDATEEE');
       update();
       renderer.render(scene, camera);
       gl.endFrameEXP();
@@ -193,15 +185,10 @@ export default function Planetarium() {
               if (value) {
                 handlePermissionRequest();
               }
-              console.log('WOWOWWOOW', value);
               setDeviceControlEnabled(value);
             }}
             trackColor={{ false: '#767577', true: '#4CAF50' }}
           />
-        </View>
-
-        <View style={styles.controlRow}>
-          <Text style={styles.label}>Sensitivity: {sensitivity.toFixed(1)}x</Text>
         </View>
 
         {!permissionGranted && deviceControlEnabled && (

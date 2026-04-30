@@ -6,26 +6,21 @@ export interface DeviceOrientation {
   alpha: number;
   beta: number;
   gamma: number;
-  quaternion: { x: number; y: number; z: number; w: number };
+  quaternion: THREE.Quaternion;
 }
 
 interface UseDeviceOrientationOptions {
   enable?: boolean;
-  sensitivity?: number;
-  deadzone?: number;
 }
 
 interface UseDeviceOrientationReturn {
   orientation: DeviceOrientation | null;
   isListening: boolean;
   requestPermission: () => Promise<boolean>;
-  resetOrientation: () => void;
 }
 
 const DEFAULT_OPTIONS: Required<UseDeviceOrientationOptions> = {
   enable: true,
-  sensitivity: 1.0,
-  deadzone: 2.0,
 };
 
 export function useDeviceOrientation(
@@ -33,8 +28,6 @@ export function useDeviceOrientation(
 ): UseDeviceOrientationReturn {
   const {
     enable = DEFAULT_OPTIONS.enable,
-    sensitivity = DEFAULT_OPTIONS.sensitivity,
-    deadzone = DEFAULT_OPTIONS.deadzone,
   } = options;
 
   const [orientation, setOrientation] = useState<DeviceOrientation | null>(null);
@@ -70,28 +63,12 @@ export function useDeviceOrientation(
     let subscription: { remove(): void } | null = null;
 
     const handleMotion = (event: DeviceMotionMeasurement) => {
-      console.log('MOTION EVENT', event);
       if (!enable || !event.rotation) return;
 
       const { alpha, beta, gamma } = event.rotation;
 
       // Only update if we have valid rotation data
       if (alpha === null || beta === null || gamma === null) return;
-
-      const applyDeadzone = (value: number) => {
-        if (Math.abs(value) < deadzone) {
-          return 0;
-        }
-        return value;
-      };
-
-      // const filteredAlpha = applyDeadzone(alpha);
-      // const filteredBeta = applyDeadzone(beta);
-      // const filteredGamma = applyDeadzone(gamma);
-
-      // const scaledAlpha = filteredAlpha * sensitivity;
-      // const scaledBeta = filteredBeta * sensitivity;
-      // const scaledGamma = filteredGamma * sensitivity;
 
       // Build quaternion from Euler angles (YXZ order: yaw→pitch→roll)
       const euler = new THREE.Euler(beta, gamma, alpha, 'YXZ');
@@ -101,7 +78,7 @@ export function useDeviceOrientation(
         alpha,
         beta,
         gamma,
-        quaternion: { x: quaternion.x, y: quaternion.y, z: quaternion.z, w: quaternion.w },
+        quaternion,
       });
     };
 
@@ -115,16 +92,11 @@ export function useDeviceOrientation(
         subscription.remove();
       }
     };
-  }, [enable, sensitivity, deadzone]);
-
-  const resetOrientation = useCallback(() => {
-    setOrientation(null);
-  }, []);
+  }, [enable]);
 
   return {
     orientation,
     isListening,
     requestPermission,
-    resetOrientation,
   };
 }

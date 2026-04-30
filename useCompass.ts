@@ -86,19 +86,8 @@ export function useCompass(
       // Only update if we have valid readings
       if (x === null || y === null) return;
 
-      // Apply deadzone
-      const applyDeadzone = (value: number) => {
-        if (Math.abs(value) < deadzone) {
-          return 0;
-        }
-        return value;
-      };
-
-      const filteredX = applyDeadzone(x);
-      const filteredY = applyDeadzone(y);
-
       // Calculate compass heading
-      const heading = calculateHeading(filteredX, filteredY);
+      const heading = calculateHeading(x, y);
 
       setCompass({ heading });
     };
@@ -118,6 +107,8 @@ export function useCompass(
   const resetCompass = useCallback(() => {
     setCompass(null);
   }, []);
+
+  console.log('compass', compass)
 
   return {
     compass,
