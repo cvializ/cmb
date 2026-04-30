@@ -46,15 +46,12 @@ export default function Planetarium() {
     renderer.setSize(width, height);
     renderer.setClearColor(sceneColor);
 
-    const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-    camera.position.set(0, 0, 0);
-    setCamera(camera);
-
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-    const texture = await loadAsync(require('./sphere.png'));
+    const axesHelper = new THREE.AxesHelper( 1 );
+    scene.add( axesHelper );
 
     const ambientLight = new THREE.AmbientLight(0xFFFFFF, .5);
     scene.add(ambientLight);
@@ -68,10 +65,11 @@ export default function Planetarium() {
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
+    // const texture = await loadAsync(require('./sphere.png'));
     const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1.5, 64, 64),
+      new THREE.SphereGeometry(5, 64, 64),
       new THREE.MeshStandardMaterial({
-        map: texture,
+        // map: texture,
         side: THREE.BackSide,
         roughness: 0.5,
         metalness: 0.1,
@@ -79,29 +77,30 @@ export default function Planetarium() {
     );
     scene.add(sphere);
 
+    const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
+    // camera.up = new THREE.Vector3(0, 0, 1); // z up 
+    camera.position.set(1, 1, 1);
+
+    camera.lookAt(0, 0, 0);
+    setCamera(camera);
+
     const update = () => {
       const orientation = orientationRef.current;
 
       if (orientation && deviceControlEnabledRef.current) {
-        // Compass heading is in degrees from magnetometer — override yaw (alpha component)
-        let quaternion = new THREE.Quaternion().set(
-          orientation.quaternion.x,
-          orientation.quaternion.y,
-          orientation.quaternion.z,
-          orientation.quaternion.w,
-        );
 
         // Reference: -90° around X-axis to align device frame with Three.js
-        const referenceQuaternion = new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(-Math.PI / 2, 0, 0)
-        );
+        // const referenceQuaternion = new THREE.Quaternion().setFromEuler(
+        //   new THREE.Euler(-Math.PI / 2, 0, 0)
+        // );
+        // const referenceQuaternion = new THREE.Quaternion();
 
         // Final quaternion: device rotation × reference alignment
-        const finalQuaternion = new THREE.Quaternion().copy(quaternion);
-        finalQuaternion.multiply(referenceQuaternion);
-        camera.quaternion.copy(finalQuaternion);
+        // const finalQuaternion = new THREE.Quaternion().copy(quaternion);
+        const final = orientation.quaternion; //.premultiply(referenceQuaternion);
+        camera.quaternion.copy(final);
 
-        console.log(`Final Quaternion: ${finalQuaternion.x.toFixed(4)}, ${finalQuaternion.y.toFixed(4)}, ${finalQuaternion.z.toFixed(4)}, ${finalQuaternion.w.toFixed(4)}`);
+        console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
       }
     };
 

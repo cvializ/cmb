@@ -65,19 +65,17 @@ export function useDeviceOrientation(
     const handleMotion = (event: DeviceMotionMeasurement) => {
       if (!enable || !event.rotation) return;
 
-      const { alpha, beta, gamma } = event.rotation;
-
-      // Only update if we have valid rotation data
-      if (alpha === null || beta === null || gamma === null) return;
+      const { alpha: deviceAlpha, beta: deviceBeta, gamma: deviceGamma } = event.rotation;
+      // device
 
       // Build quaternion from Euler angles (YXZ order: yaw→pitch→roll)
-      const euler = new THREE.Euler(beta, gamma, alpha, 'YXZ');
+      const euler = new THREE.Euler(deviceBeta, deviceGamma, deviceAlpha, 'YXZ');
       const quaternion = new THREE.Quaternion().setFromEuler(euler);
 
       setOrientation({
-        alpha,
-        beta,
-        gamma,
+        alpha: deviceAlpha,
+        beta: deviceBeta,
+        gamma: deviceGamma,
         quaternion,
       });
     };
