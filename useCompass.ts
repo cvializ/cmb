@@ -25,15 +25,16 @@ const DEFAULT_OPTIONS: Required<UseCompassOptions> = {
 };
 
 /**
- * Calculate compass heading from magnetometer readings.
- * Uses atan2(y, x) to get the angle in radians relative to magnetic North (X-axis).
- * Converts to degrees and normalizes to 0–360 range.
+ * Calculate compass heading from magnetometer readings
+ * @param x - Magnetometer X value
+ * @param y - Magnetometer Y value
+ * @returns Compass heading in degrees (0-360)
  */
 const calculateHeading = (x: number, y: number): number => {
-  const headingRad = Math.atan2(y, x); // radians relative to X-axis (magnetic North)
-  let degrees = headingRad * (180 / Math.PI); // convert to degrees
-  let normalized = (degrees + 360) % 360;
-  return normalized;
+  const heading = Math.atan2(y, x); // radians
+  let degrees = heading * (180 / Math.PI);
+  degrees = (degrees + 360 - 90) % 360;
+  return degrees;
 };
 
 export function useCompass(
