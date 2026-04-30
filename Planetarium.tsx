@@ -1,22 +1,17 @@
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
 import { THREE, Renderer, loadAsync } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, Switch } from 'react-native';
 
 import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
-import { DeviceCompass, useCompass } from './useCompass';
-
-
-const radianToDegree = (radian: number) => radian * 180 / Math.PI;
+import { styles } from './styles';
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState(false);
-  const [compass, setCompass] = useState<DeviceCompass | null>(null);
   const orientationRef = useRef<DeviceOrientation|null>(null);
-  const compassDataRef = useRef<DeviceCompass|null>(null);
   const deviceControlEnabledRef = useRef(false);
 
   let timeout: number;
@@ -25,12 +20,7 @@ export default function Planetarium() {
     enable: deviceControlEnabled,
   });
 
-  const { compass: compassData, requestPermission: requestCompassPermission, isListening: compassListening } = useCompass({
-    enable: deviceControlEnabled,
-  });
-
   orientationRef.current = orientation;
-  compassDataRef.current = compassData;
   deviceControlEnabledRef.current = deviceControlEnabled;
 
   useEffect(() => {
@@ -38,9 +28,7 @@ export default function Planetarium() {
   }, []);
 
   const handlePermissionRequest = async () => {
-    const motionGranted = await requestPermission();
-    const compassGranted = await requestCompassPermission();
-    const granted = motionGranted && compassGranted;
+    const granted = await requestPermission();
     setPermissionGranted(granted);
   };
 
@@ -65,39 +53,6 @@ export default function Planetarium() {
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
-
-    // X-axis arrow (Red)
-    const xAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0),
-      new THREE.Vector3(0, 0, 0),
-      2.5,
-      0xff0000,
-      0.5,
-      0.3
-    );
-    scene.add(xAxis);
-
-    // Y-axis arrow (Green)
-    const yAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 1, 0),
-      new THREE.Vector3(0, 0, 0),
-      2.5,
-      0x00ff00,
-      0.5,
-      0.3
-    );
-    scene.add(yAxis);
-
-    // Z-axis arrow (Blue)
-    const zAxis = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(0, 0, 0),
-      2.5,
-      0x0000ff,
-      0.5,
-      0.3
-    );
-    scene.add(zAxis);
 
     const texture = await loadAsync(require('./sphere.png'));
 
@@ -126,7 +81,6 @@ export default function Planetarium() {
 
     const update = () => {
       const orientation = orientationRef.current;
-      const compassData = compassDataRef.current;
 
       if (orientation && deviceControlEnabledRef.current) {
         // Compass heading is in degrees from magnetometer — override yaw (alpha component)
@@ -136,16 +90,6 @@ export default function Planetarium() {
           orientation.quaternion.z,
           orientation.quaternion.w,
         );
-
-        if (compassData && compassData.heading !== undefined) {
-          const yawRad = THREE.MathUtils.degToRad(compassData.heading);
-          console.log(`Using compass heading for yaw: ${compassData.heading}° → ${yawRad.toFixed(4)} rad`);
-          // Rebuild quaternion with compass yaw, keeping pitch and roll from device
-          const euler = new THREE.Euler(orientation.beta, orientation.gamma, yawRad, 'YXZ');
-          quaternion.setFromEuler(euler);
-        } else {
-          console.log(`Using alpha for yaw: ${orientation.alpha.toFixed(4)} rad`);
-        }
 
         // Reference: -90° around X-axis to align device frame with Three.js
         const referenceQuaternion = new THREE.Quaternion().setFromEuler(
@@ -206,20 +150,13 @@ export default function Planetarium() {
             <Text style={styles.debugTitle}>Debug Info</Text>
             <Text style={styles.debugText}>Device Control: {deviceControlEnabled ? 'ON' : 'OFF'}</Text>
             <Text style={styles.debugText}>Listening: {isListening ? 'YES' : 'NO'}</Text>
-            <Text style={styles.debugText}>Compass: {compassListening ? 'YES' : 'NO'}</Text>
             {orientation && (
               <>
-                <Text style={styles.debugText}>Alpha (Z): {radianToDegree(orientation.alpha)}°</Text>
-                <Text style={styles.debugText}>Beta (X): {radianToDegree(orientation.beta)}°</Text>
-                <Text style={styles.debugText}>Gamma (Y): {radianToDegree(orientation.gamma)}°</Text>
+                <Text style={styles.debugText}>Alpha (Z): {THREE.MathUtils.radToDeg(orientation.alpha)}°</Text>
+                <Text style={styles.debugText}>Beta (X): {THREE.MathUtils.radToDeg(orientation.beta)}°</Text>
+                <Text style={styles.debugText}>Gamma (Y): {THREE.MathUtils.radToDeg(orientation.gamma)}°</Text>
               </>
             )}
-            {compassData && (
-              <>
-                <Text style={styles.debugText}>Compass Heading: {compassData.heading.toFixed(1)}°</Text>
-              </>
-            )}
-            {!orientation && !compass && <Text style={styles.debugText}>No sensor data</Text>}
           </View>
         )}
 
@@ -230,69 +167,3 @@ export default function Planetarium() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  glView: {
-    flex: 1,
-  },
-  controls: {
-    position: 'absolute',
-    top: 20,
-    left: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 16,
-    borderRadius: 12,
-    width: 280,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  controlRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  label: {
-    color: '#fff',
-    fontSize: 14,
-    marginRight: 12,
-    minWidth: 100,
-  },
-  button: {
-    backgroundColor: '#2196F3',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  debugPanel: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  debugTitle: {
-    color: '#4CAF50',
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  debugText: {
-    color: '#fff',
-    fontSize: 12,
-    marginBottom: 4,
-  },
-});
