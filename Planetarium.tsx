@@ -1,5 +1,5 @@
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
-import { THREE, Renderer } from 'expo-three';
+import { THREE, Renderer, loadAsync } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Switch } from 'react-native';
 
@@ -67,11 +67,11 @@ export default function Planetarium() {
     spotLight.lookAt(scene.position);
     scene.add(spotLight);
 
-    // const texture = await loadAsync(require('./sphere.png'));
+    const texture = await loadAsync(require('./sphere.png'));
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(5, 64, 64),
       new THREE.MeshStandardMaterial({
-        // map: texture,
+        map: texture,
         side: THREE.BackSide,
         roughness: 0.5,
         metalness: 0.1,
@@ -90,7 +90,7 @@ export default function Planetarium() {
       const orientation = orientationRef.current;
       const deviceNormalQ = deviceNormalQRef.current;
 
-      if (deviceNormalQ && deviceControlEnabledRef.current) {
+      if (orientation && deviceNormalQ && deviceControlEnabledRef.current) {
         // Final quaternion: device rotation × reference alignment
         // const finalQuaternion = new THREE.Quaternion().copy(quaternion);
         // const final = orientation.quaternion; //.premultiply(referenceQuaternion);
@@ -101,7 +101,9 @@ export default function Planetarium() {
         //   new THREE.Euler(0, orientation.gamma, 0)
         // ));
         // axesHelper.quaternion.copy(deviceNormalQ);
-        camera.quaternion.copy(deviceNormalQ);
+        const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), orientation.gamma);
+
+        camera.quaternion.copy(deviceNormalQ.multiply(yawQ));
 
         // console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
       }
