@@ -63,5 +63,6 @@ export const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     marginBottom: 4,
+    fontFamily: 'ui-monospace',
   },
 });

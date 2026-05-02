@@ -1,5 +1,5 @@
 import { ExpoWebGLRenderingContext, GLView } from 'expo-gl';
-import { THREE, Renderer, loadAsync } from 'expo-three';
+import { THREE, Renderer } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Switch } from 'react-native';
 
@@ -88,19 +88,17 @@ export default function Planetarium() {
       const orientation = orientationRef.current;
 
       if (orientation && deviceControlEnabledRef.current) {
-
-        // Reference: -90° around X-axis to align device frame with Three.js
-        // const referenceQuaternion = new THREE.Quaternion().setFromEuler(
-        //   new THREE.Euler(-Math.PI / 2, 0, 0)
-        // );
-        // const referenceQuaternion = new THREE.Quaternion();
-
         // Final quaternion: device rotation × reference alignment
         // const finalQuaternion = new THREE.Quaternion().copy(quaternion);
-        const final = orientation.quaternion; //.premultiply(referenceQuaternion);
-        camera.quaternion.copy(final);
+        // const final = orientation.quaternion; //.premultiply(referenceQuaternion);
+        // camera.quaternion.copy(final);
 
-        console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
+        
+        axesHelper.quaternion.copy(new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(0, orientation.gamma, 0)
+        ));
+
+        // console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
       }
     };
 
@@ -151,9 +149,9 @@ export default function Planetarium() {
             <Text style={styles.debugText}>Listening: {isListening ? 'YES' : 'NO'}</Text>
             {orientation && (
               <>
-                <Text style={styles.debugText}>Alpha (Z): {THREE.MathUtils.radToDeg(orientation.alpha)}°</Text>
-                <Text style={styles.debugText}>Beta (X): {THREE.MathUtils.radToDeg(orientation.beta)}°</Text>
-                <Text style={styles.debugText}>Gamma (Y): {THREE.MathUtils.radToDeg(orientation.gamma)}°</Text>
+                <Text style={styles.debugText}>Alpha (Z): {THREE.MathUtils.radToDeg(orientation.alpha).toFixed(2)}°</Text>
+                <Text style={styles.debugText}>Beta  (X): {THREE.MathUtils.radToDeg(orientation.beta).toFixed(2)}°</Text>
+                <Text style={styles.debugText}>Gamma (Y): {THREE.MathUtils.radToDeg(orientation.gamma).toFixed(2)}°</Text>
               </>
             )}
           </View>
