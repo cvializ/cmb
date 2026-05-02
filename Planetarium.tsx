@@ -100,7 +100,8 @@ export default function Planetarium() {
         // axesHelper.quaternion.copy(new THREE.Quaternion().setFromEuler(
         //   new THREE.Euler(0, orientation.gamma, 0)
         // ));
-        axesHelper.quaternion.copy(deviceNormalQ);
+        // axesHelper.quaternion.copy(deviceNormalQ);
+        camera.quaternion.copy(deviceNormalQ);
 
         // console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
       }
