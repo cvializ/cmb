@@ -6,23 +6,23 @@ import { View, Text, TouchableOpacity, Switch } from 'react-native';
 import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
 import { styles } from './styles';
 
+const PORTRAIT_CORRECTION_QUATERNION = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState(false);
   const orientationRef = useRef<DeviceOrientation | null>(null);
-  const deviceNormalQRef = useRef<THREE.Quaternion|null>(null);
   const deviceControlEnabledRef = useRef(false);
 
   let timeout: number;
 
-  const { orientation, requestPermission, isListening, deviceNormalQ } = useDeviceOrientation({
+  const { orientation, requestPermission, isListening } = useDeviceOrientation({
     enable: deviceControlEnabled,
   });
 
   orientationRef.current = orientation;
-  deviceNormalQRef.current = deviceNormalQ;
   deviceControlEnabledRef.current = deviceControlEnabled;
 
   useEffect(() => {
@@ -80,37 +80,23 @@ export default function Planetarium() {
     scene.add(sphere);
 
     const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
-    // camera.up = new THREE.Vector3(0, 0, 1); // z up 
-    camera.position.set(1, 1, 1);
+    camera.position.set(0, 0, 0);
 
     camera.lookAt(0, 0, 0);
     setCamera(camera);
 
     const update = () => {
-      const orientation = orientationRef.current;
-      const deviceNormalQ = deviceNormalQRef.current;
-
-      if (orientation && deviceNormalQ && deviceControlEnabledRef.current) {
-        // Final quaternion: device rotation × reference alignment
-        // const finalQuaternion = new THREE.Quaternion().copy(quaternion);
-        // const final = orientation.quaternion; //.premultiply(referenceQuaternion);
-        // camera.quaternion.copy(final);
-
-
-        // axesHelper.quaternion.copy(new THREE.Quaternion().setFromEuler(
-        //   new THREE.Euler(0, orientation.gamma, 0)
-        // ));
-        // axesHelper.quaternion.copy(deviceNormalQ);
-        // const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), orientation.gamma);
-        // camera.quaternion.copy(deviceNormalQ.multiply(yawQ));
-
-        const correction = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
-        const euler = new THREE.Euler(orientation.beta, orientation.gamma, orientation.alpha, 'ZXY');
-        const orientationQ = new THREE.Quaternion().setFromEuler(euler);
-        camera.quaternion.copy(orientationQ.premultiply(correction));
-
-        // console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
+      const deviceControlEnabled = deviceControlEnabledRef.current;
+      if (!deviceControlEnabled) {
+        return;
       }
+
+      const orientation = orientationRef.current;
+      if (!orientation) {
+        return;
+      }
+
+      camera.quaternion.copy(orientation.quaternion.premultiply(PORTRAIT_CORRECTION_QUATERNION));
     };
 
     const render = () => {
