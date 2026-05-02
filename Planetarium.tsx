@@ -96,14 +96,18 @@ export default function Planetarium() {
         // const final = orientation.quaternion; //.premultiply(referenceQuaternion);
         // camera.quaternion.copy(final);
 
-        
+
         // axesHelper.quaternion.copy(new THREE.Quaternion().setFromEuler(
         //   new THREE.Euler(0, orientation.gamma, 0)
         // ));
         // axesHelper.quaternion.copy(deviceNormalQ);
-        const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), orientation.gamma);
+        // const yawQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), orientation.gamma);
+        // camera.quaternion.copy(deviceNormalQ.multiply(yawQ));
 
-        camera.quaternion.copy(deviceNormalQ.multiply(yawQ));
+        const correction = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+        const euler = new THREE.Euler(orientation.beta, orientation.gamma, orientation.alpha, 'ZXY');
+        const orientationQ = new THREE.Quaternion().setFromEuler(euler);
+        camera.quaternion.copy(orientationQ.premultiply(correction));
 
         // console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
       }
