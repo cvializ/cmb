@@ -11,16 +11,18 @@ export default function Planetarium() {
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState(false);
-  const orientationRef = useRef<DeviceOrientation|null>(null);
+  const orientationRef = useRef<DeviceOrientation | null>(null);
+  const deviceNormalQRef = useRef<THREE.Quaternion|null>(null);
   const deviceControlEnabledRef = useRef(false);
 
   let timeout: number;
 
-  const { orientation, requestPermission, isListening } = useDeviceOrientation({
+  const { orientation, requestPermission, isListening, deviceNormalQ } = useDeviceOrientation({
     enable: deviceControlEnabled,
   });
 
   orientationRef.current = orientation;
+  deviceNormalQRef.current = deviceNormalQ;
   deviceControlEnabledRef.current = deviceControlEnabled;
 
   useEffect(() => {
@@ -86,17 +88,19 @@ export default function Planetarium() {
 
     const update = () => {
       const orientation = orientationRef.current;
+      const deviceNormalQ = deviceNormalQRef.current;
 
-      if (orientation && deviceControlEnabledRef.current) {
+      if (deviceNormalQ && deviceControlEnabledRef.current) {
         // Final quaternion: device rotation × reference alignment
         // const finalQuaternion = new THREE.Quaternion().copy(quaternion);
         // const final = orientation.quaternion; //.premultiply(referenceQuaternion);
         // camera.quaternion.copy(final);
 
         
-        axesHelper.quaternion.copy(new THREE.Quaternion().setFromEuler(
-          new THREE.Euler(0, orientation.gamma, 0)
-        ));
+        // axesHelper.quaternion.copy(new THREE.Quaternion().setFromEuler(
+        //   new THREE.Euler(0, orientation.gamma, 0)
+        // ));
+        axesHelper.quaternion.copy(deviceNormalQ);
 
         // console.log(`Final Quaternion: ${final.x.toFixed(4)}, ${final.y.toFixed(4)}, ${final.z.toFixed(4)}, ${final.w.toFixed(4)}`);
       }

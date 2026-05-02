@@ -1,6 +1,6 @@
 import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
+import { THREE } from 'expo-three';
 import { useState, useCallback, useEffect } from 'react';
-// import { THREE } from 'expo-three';
 
 export interface DeviceOrientation {
   alpha: number;
@@ -14,6 +14,7 @@ interface UseDeviceOrientationOptions {
 
 interface UseDeviceOrientationReturn {
   orientation: DeviceOrientation | null;
+  deviceNormalQ: THREE.Quaternion | null;
   isListening: boolean;
   requestPermission: () => Promise<boolean>;
 }
@@ -30,6 +31,7 @@ export function useDeviceOrientation(
   } = options;
 
   const [orientation, setOrientation] = useState<DeviceOrientation | null>(null);
+  const [deviceNormalQ, setDeviceNormalQ] = useState<THREE.Quaternion | null>(null);
   const [isListening, setIsListening] = useState(false);
 
   const requestPermission = useCallback(async (): Promise<boolean> => {
@@ -71,6 +73,31 @@ export function useDeviceOrientation(
         beta,
         gamma,
       });
+
+      // Compute device screen normal quaternion from acceleration including gravity.
+      // The accelerometer measures the gravity vector in device coordinates.
+      // The screen normal points outward from the screen, opposite to gravity.
+      if (event.accelerationIncludingGravity) {
+        const { x, y, z } = event.accelerationIncludingGravity;
+
+        // Avoid near-zero vectors (e.g., free-fall or invalid data)
+        const magnitude = Math.sqrt(x * x + y * y + z * z);
+        if (magnitude > 0.1) {
+          const gravity = new THREE.Vector3(x, y, z);
+          // Screen normal points opposite to the gravity direction
+          const screenNormal = new THREE.Vector3().copy(gravity).negate().normalize();
+
+          // Reference vector: device's default screen normal (+Z axis in device coords)
+          const reference = new THREE.Vector3(0, 0, 1);
+
+          // Compute the quaternion that rotates the reference vector to the screen normal
+          const normalQuaternion = new THREE.Quaternion().setFromUnitVectors(
+            reference,
+            screenNormal
+          );
+          setDeviceNormalQ(normalQuaternion);
+        }
+      }
     };
 
     if (enable) {
@@ -87,6 +114,7 @@ export function useDeviceOrientation(
 
   return {
     orientation,
+    deviceNormalQ,
     isListening,
     requestPermission,
   };
