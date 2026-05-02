@@ -4,15 +4,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Switch } from 'react-native';
 
 import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
+import { getCelestialOrientation } from './astronomy';
 import { styles } from './styles';
 
 const PORTRAIT_CORRECTION_QUATERNION = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
+
+const Q_celestial = getCelestialOrientation(39.95, -75.17); // philadelphia
 
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
   const [showDebug, setShowDebug] = useState(false);
-    const [permissionGranted, setPermissionGranted] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
   const orientationRef = useRef<DeviceOrientation | null>(null);
   const deviceControlEnabledRef = useRef(false);
 
@@ -52,8 +55,8 @@ export default function Planetarium() {
     scene.fog = new THREE.Fog(sceneColor, 1, 10000);
     scene.add(new THREE.GridHelper(10, 10));
 
-    const axesHelper = new THREE.AxesHelper( 1 );
-    scene.add( axesHelper );
+    const axesHelper = new THREE.AxesHelper(1);
+    scene.add(axesHelper);
 
     const ambientLight = new THREE.AmbientLight(0xFFFFFF, .5);
     scene.add(ambientLight);
@@ -79,7 +82,7 @@ export default function Planetarium() {
     );
     scene.add(sphere);
 
-    const camera = new THREE.PerspectiveCamera(70, width / height, 0.01, 1000);
+    const camera = new THREE.PerspectiveCamera(120, width / height, 0.01, 1000);
     camera.position.set(0, 0, 0);
 
     camera.lookAt(0, 0, 0);
@@ -96,7 +99,10 @@ export default function Planetarium() {
         return;
       }
 
-      camera.quaternion.copy(orientation.quaternion.premultiply(PORTRAIT_CORRECTION_QUATERNION));
+      camera.quaternion
+        .copy(orientation.quaternion)
+        .premultiply(PORTRAIT_CORRECTION_QUATERNION)
+        .premultiply(Q_celestial);
     };
 
     const render = () => {
