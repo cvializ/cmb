@@ -1,7 +1,7 @@
 import { THREE, loadAsync } from 'expo-three';
 
 export async function createCosmicMicrowaveBackground() {
-    const texture = await loadAsync(require('../sphere.png'));
+    const texture = await loadAsync(require('../assets/sphere.png'));
     const sphere = new THREE.Mesh(
         new THREE.SphereGeometry(5, 64, 64),
         new THREE.MeshStandardMaterial({

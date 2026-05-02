@@ -3,11 +3,13 @@ import { THREE, Renderer } from 'expo-three';
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Switch } from 'react-native';
 
-import { DeviceOrientation, useDeviceOrientation } from './useDeviceOrientation';
-import { getCelestialOrientation } from './astronomy';
-import { createCompass } from './nodes/compass';
-import { createCosmicMicrowaveBackground } from './nodes/cosmicMicrowaveBackground';
-import { styles } from './styles';
+import { DeviceOrientation, useDeviceOrientation } from '../hooks/useDeviceOrientation';
+import { createCompass } from '../nodes/compass';
+import { createCosmicMicrowaveBackground } from '../nodes/cosmicMicrowaveBackground';
+import { getCelestialOrientation } from '../utils/astronomy';
+
+import { styles } from './Planetarium.styles';
+
 
 const PORTRAIT_CORRECTION_QUATERNION = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
