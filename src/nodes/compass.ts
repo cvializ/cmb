@@ -44,10 +44,10 @@ export function createCompass() {
     // Cardinal direction tick marks
     const tickGeometry = new THREE.BoxGeometry(0.06, 0.02, 0.15);
     const directions = [
-        { angle: 0, color: 0xff4444 },   // +Z (North)
+        { angle: 0, color: 0xffffff },   // +Z (North)
         { angle: Math.PI, color: 0xff4444 }, // -Z (South)
-        { angle: Math.PI / 2, color: 0xffffff }, // +X (East)
-        { angle: -Math.PI / 2, color: 0xffffff }, // -X (West)
+        { angle: Math.PI / 2, color: 0x00ff00 }, // +X (East)
+        { angle: -Math.PI / 2, color: 0x0000ff }, // -X (West)
     ];
 
     directions.forEach((dir) => {
