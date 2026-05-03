@@ -17,7 +17,8 @@
       "bundleIdentifier": "com.anonymous.my-expo-app",
       "infoPlists": {
         "NSMotionUsageDescription": "for planetarium AR",
-        "NSMachPortUsageDescription": "Required for device motion tracking"
+        "NSMachPortUsageDescription": "Required for device motion tracking",
+        "NSLocationWhenInUseUsageDescription": "Used to get your current location for astronomical calculations"
       }
     },
     "android": {

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Switch } from 'react-native';
 
 import { DeviceOrientation, useDeviceOrientation } from '../hooks/useDeviceOrientation';
+import { useDeviceLocation } from '../hooks/useDeviceLocation';
 import { createCompass } from '../nodes/compass';
 import { createCosmicMicrowaveBackground } from '../nodes/cosmicMicrowaveBackground';
 import { getCelestialOrientation } from '../utils/astronomy';
@@ -13,8 +14,6 @@ import { styles } from './Planetarium.styles';
 
 const PORTRAIT_CORRECTION_QUATERNION = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2);
 
-const Q_celestial = getCelestialOrientation(39.95, -75.17); // philadelphia
-
 export default function Planetarium() {
   const [camera, setCamera] = useState<THREE.Camera | null>(null);
   const [deviceControlEnabled, setDeviceControlEnabled] = useState(false);
@@ -22,12 +21,29 @@ export default function Planetarium() {
   const [permissionGranted, setPermissionGranted] = useState(false);
   const orientationRef = useRef<DeviceOrientation | null>(null);
   const deviceControlEnabledRef = useRef(false);
+  const qCelestialRef = useRef<THREE.Quaternion | null>(null);
 
   let timeout: number;
 
   const { orientation, requestPermission, isListening } = useDeviceOrientation({
     enable: deviceControlEnabled,
   });
+
+  const { location, requestLocation } = useDeviceLocation();
+
+  // Compute Q_celestial from the device's actual lat/lng once available
+  useEffect(() => {
+    if (location && !qCelestialRef.current) {
+      qCelestialRef.current = getCelestialOrientation(location.latitude, location.longitude);
+    }
+  }, [location]);
+
+  // Request location on mount if not already available
+  useEffect(() => {
+    if (!location) {
+      requestLocation();
+    }
+  }, [requestLocation]);
 
   orientationRef.current = orientation;
   deviceControlEnabledRef.current = deviceControlEnabled;
@@ -72,7 +88,6 @@ export default function Planetarium() {
 
     const cosmicMicrowaveBackground = await createCosmicMicrowaveBackground();
     scene.add(cosmicMicrowaveBackground);
-    cosmicMicrowaveBackground.quaternion.premultiply(Q_celestial);
 
     const camera = new THREE.PerspectiveCamera(120, width / height, 0.01, 1000);
     camera.position.set(0, 0, 0);
@@ -91,6 +106,11 @@ export default function Planetarium() {
       const orientation = orientationRef.current;
       if (!orientation) {
         return;
+      }
+
+      // Use the computed Q_celestial from the device's actual location
+      if (qCelestialRef.current) {
+        cosmicMicrowaveBackground.quaternion.copy(qCelestialRef.current);
       }
 
       camera.quaternion
@@ -143,6 +163,12 @@ export default function Planetarium() {
             <Text style={styles.debugTitle}>Debug Info</Text>
             <Text style={styles.debugText}>Device Control: {deviceControlEnabled ? 'ON' : 'OFF'}</Text>
             <Text style={styles.debugText}>Listening: {isListening ? 'YES' : 'NO'}</Text>
+            {location && (
+              <>
+                <Text style={styles.debugText}>Latitude: {location.latitude.toFixed(6)}</Text>
+                <Text style={styles.debugText}>Longitude: {location.longitude.toFixed(6)}</Text>
+              </>
+            )}
             {orientation && (
               <>
                 <Text style={styles.debugText}>Alpha (Z): {THREE.MathUtils.radToDeg(orientation.alpha).toFixed(2)}°</Text>
